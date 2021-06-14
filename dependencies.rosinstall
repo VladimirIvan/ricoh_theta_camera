@@ -1,0 +1,1 @@
+- git: {local-name: libuvc_theta, uri: 'git@github.com:VladimirIvan/libuvc-theta.git', version: theta_uvc}
