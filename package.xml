@@ -6,19 +6,7 @@
   <maintainer email="v.ivan@ed.ac.uk">Vladimir Ivan</maintainer>
   <license>BSD</license>
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>cv_bridge</depend>
   <depend>image_transport</depend>
-  <depend>gstreamer1.0</depend>
-  <depend>gstreamer1.0-gl</depend>
-  <depend>gstreamer1.0-libav</depend>
-  <depend>gstreamer1.0-alsa</depend>
-  <depend>gstreamer1.0-plugins-bad</depend>
-  <depend>gstreamer1.0-plugins-base</depend>
-  <depend>gstreamer1.0-plugins-good</depend>
-  <depend>gstreamer1.0-plugins-ugly</depend>
-  <depend>gstreamer1.0-tools</depend>
-  <depend>libgstreamer1.0-dev</depend>
-  <depend>libgstreamer-plugins-base1.0-dev</depend>
   <depend>libjpeg</depend>
   <depend>libuvc_theta</depend>
   <depend>roscpp</depend>
