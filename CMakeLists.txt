@@ -14,8 +14,8 @@ pkg_check_modules(libuvc REQUIRED libuvc)
 catkin_package()
 
 include_directories(
-  ${catkin_INCLUDE_DIRS}
   ${libuvc_INCLUDE_DIRS}
+  ${catkin_INCLUDE_DIRS}
   ${libjpeg_INCLUDE_DIRS}
   ${libav_INCLUDE_DIRS}
 )
