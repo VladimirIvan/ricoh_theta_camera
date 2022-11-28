@@ -32,6 +32,8 @@
 #include <sensor_msgs/Image.h>
 #include <exception>
 #include <vector>
+#include <chrono>
+#include <math.h>
 
 #include <libuvc/libuvc.h> // BSD
 #include "thetauvc.h" // BSD
@@ -43,6 +45,24 @@ extern "C"
 #include <libavutil/avutil.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
+}
+
+typedef std::chrono::time_point<std::chrono::system_clock> Time;
+
+inline void TIC(Time& start)
+{
+    start = std::chrono::system_clock::now();
+};
+
+inline double TOC(Time start)
+{
+    return static_cast<std::chrono::duration<double>>(std::chrono::system_clock::now() - start).count();
+};
+
+inline double round(double val, int dec)
+{
+    double mul = pow(10.0, static_cast<double>(dec));
+    return round(val * mul) / mul;
 }
 
 class Theta
@@ -66,6 +86,7 @@ class Theta
 
     bool has_picture = false;
     int ignore_errors = 1;
+    double decode_latency = 0.0;
 
 public:
     Theta() : nh()
@@ -90,9 +111,9 @@ public:
         
         codec_context = avcodec_alloc_context3(codec);
         
-        if(codec->capabilities & CODEC_CAP_TRUNCATED)
+        if(codec->capabilities & AV_CODEC_CAP_TRUNCATED)
         {
-            codec_context->flags |= CODEC_FLAG_TRUNCATED;
+            codec_context->flags |= AV_CODEC_FLAG_TRUNCATED;
         }
         
         if(avcodec_open2(codec_context, codec, NULL) < 0)
@@ -159,10 +180,12 @@ public:
     {
         res = uvc_start_streaming(devh, &ctrl, Theta::cb_, reinterpret_cast<void*>(this), 0);
         ros::Rate rate(100.0);
+        Time t0;
         while(ros::ok())
         {
             if(has_picture)
             {
+                
                 if (sctx == nullptr)
                 {
                     sctx = sws_getContext(picture->width, picture->height,
@@ -174,12 +197,15 @@ public:
                     img.step = picture->width * 3;
                     img.encoding = "rgb8";
                 }
+                TIC(t0);
                 img.header.stamp = ros::Time::now();
                 img.header.seq++;
                 av_image_fill_arrays (picture_rgb->data, picture_rgb->linesize, img.data.data(), AV_PIX_FMT_RGB24, picture->width, picture->height, 1);
                 sws_scale(sctx, picture->data, picture->linesize, 0, picture->height, picture_rgb->data, picture_rgb->linesize);
                 has_picture = false;
                 pub.publish(img);
+                double image_pub_latency = TOC(t0);
+                ROS_WARN_STREAM_THROTTLE(1.0, "Latency: " << round((decode_latency + image_pub_latency)*1e3, 2) << "ms (decode: " << round((decode_latency)*1e3, 2) << "ms, ros: " << round((image_pub_latency)*1e3, 2) << "ms)");
             }
             rate.sleep();
         }
@@ -194,6 +220,9 @@ public:
         av_init_packet(&pkt);
         pkt.data = reinterpret_cast<uint8_t*>(frame->data);
         pkt.size = frame->data_bytes;
+
+        Time t0;
+        TIC(t0);
 
         if (pkt.size <= 0) return;
 
@@ -224,6 +253,8 @@ public:
             got_picture = true;
             break;
         }
+
+        decode_latency = TOC(t0);
         
         if (got_picture)
         {
