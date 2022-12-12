@@ -38,7 +38,7 @@
 #include <libuvc/libuvc.h> // BSD
 #include "thetauvc.h" // BSD
 
-extern "C" 
+extern "C"
 {
 // LGPL 2.1
 #include <libavcodec/avcodec.h>
@@ -76,7 +76,7 @@ class Theta
     sensor_msgs::Image img;
 
     AVFrame* picture = nullptr;
-    AVFrame* picture_rgb = nullptr; 
+    AVFrame* picture_rgb = nullptr;
     AVCodecContext* codec_context = nullptr;
     AVCodec* codec = nullptr;
     SwsContext * sctx = nullptr;
@@ -108,14 +108,14 @@ public:
         {
             throw std::runtime_error("Cannot find the h264 codec");
         }
-        
+
         codec_context = avcodec_alloc_context3(codec);
-        
+
         if(codec->capabilities & AV_CODEC_CAP_TRUNCATED)
         {
             codec_context->flags |= AV_CODEC_FLAG_TRUNCATED;
         }
-        
+
         if(avcodec_open2(codec_context, codec, NULL) < 0)
         {
             throw std::runtime_error("Could not open codec.");
@@ -185,7 +185,7 @@ public:
         {
             if(has_picture)
             {
-                
+
                 if (sctx == nullptr)
                 {
                     sctx = sws_getContext(picture->width, picture->height,
@@ -215,7 +215,7 @@ public:
     {
         bool got_picture = false;
         int ret = 0;
-        
+
         AVPacket pkt;
         av_init_packet(&pkt);
         pkt.data = reinterpret_cast<uint8_t*>(frame->data);
@@ -237,7 +237,7 @@ public:
             ROS_ERROR_STREAM_THROTTLE(1.0, "Error sending a packet for decoding " << ret);
             return;
         }
-        
+
         while (ret >= 0)
         {
             ret = avcodec_receive_frame(codec_context, picture);
@@ -245,7 +245,7 @@ public:
             {
                 return;
             }
-            else if (ret < 0) 
+            else if (ret < 0)
             {
                 ROS_ERROR_STREAM_THROTTLE(1.0, "Error while decoding a frame.");
                 return;
@@ -255,7 +255,7 @@ public:
         }
 
         decode_latency = TOC(t0);
-        
+
         if (got_picture)
         {
             has_picture = true;
